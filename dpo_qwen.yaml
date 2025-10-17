@@ -1,0 +1,59 @@
+# Base model path (SFT output)
+checkpoint_dir: out/qwen-sft/final
+
+# Output directory
+out_dir: out/qwen-dpo
+
+# Precision and quantization
+precision: bf16-mixed
+quantize: bnb.nf4
+
+# Devices
+devices: 1
+num_nodes: 1
+
+# LoRA (continue from SFT)
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+lora_query: true
+lora_key: false
+lora_value: true
+lora_projection: false
+lora_mlp: false
+lora_head: false
+
+# Data: DPO preference file
+data:
+  class_path: litgpt.data.DPO  # Preference loader (adapt for Qwen if needed)
+  init_args:
+    json_path: trader_dpo_data.jsonl  # Your DPO data (prompt, chosen, rejected)
+    beta: 0.1  # DPO beta parameter
+    prompt_style: chatml
+    mask_prompt: true
+    val_split_fraction: 0.05
+    seed: 42
+    num_workers: 4
+
+# Training: Alignment phase, fewer steps
+train:
+  global_batch_size: 4
+  micro_batch_size: 4
+  max_seq_length: 2048
+  epochs: 1
+  learning_rate: 5e-5  # Lower for DPO
+  weight_decay: 0.01
+  lr_warmup_steps: 50
+  save_interval: 250
+  log_interval: 10
+  max_steps: 500  # Shorter for alignment
+
+# Eval
+eval:
+  interval: 250
+  max_new_tokens: 50
+  max_iters: 20
+
+# Logging
+logger_name: csv
+seed: 42

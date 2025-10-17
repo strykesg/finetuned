@@ -1,0 +1,58 @@
+# Base model path
+checkpoint_dir: checkpoints/Qwen2.5-7B
+
+# Output directory
+out_dir: out/qwen-sft
+
+# Precision and quantization for low VRAM (QLoRA)
+precision: bf16-mixed
+quantize: bnb.nf4  # 4-bit quantization
+
+# Devices (1 GPU)
+devices: 1
+num_nodes: 1
+
+# LoRA config (lightweight: rank 16, alpha 32)
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+lora_query: true
+lora_key: false
+lora_value: true
+lora_projection: false
+lora_mlp: false
+lora_head: false
+
+# Data: Your SFT file, ChatML style for Qwen
+data:
+  class_path: litgpt.data.JSON
+  init_args:
+    json_path: trader_sft_data.jsonl  # Your SFT data
+    prompt_style: chatml  # Matches Qwen's format
+    mask_prompt: true  # Ignore prompts, train on responses
+    val_split_fraction: 0.05  # 5% validation
+    seed: 42
+    num_workers: 4
+
+# Training: Small batch for single GPU, 1 epoch (adjust max_steps for more)
+train:
+  global_batch_size: 4  # Total batch (micro_batch_size * devices)
+  micro_batch_size: 4
+  max_seq_length: 2048  # Qwen handles up to 32k, but start small
+  epochs: 1
+  learning_rate: 1e-4
+  weight_decay: 0.01
+  lr_warmup_steps: 50
+  save_interval: 500
+  log_interval: 10
+  max_steps: 1000  # ~1-2 hours on A100; adjust based on data size
+
+# Eval: Quick perplexity check
+eval:
+  interval: 500
+  max_new_tokens: 50
+  max_iters: 20
+
+# Logging
+logger_name: csv  # Simple CSV logs
+seed: 42
